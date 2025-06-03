@@ -49,10 +49,11 @@ for da, db in itertools.combinations_with_replacement(datasets, r=2):
         avals = da_data[a_field].rename(a_field_new)
         bvals = db_data[b_field].rename(b_field_new)
         merged = pd.concat([avals, bvals], axis=1).dropna()
-        correlation, p = ss.spearmanr(
-            merged[a_field_new].values,
-            merged[b_field_new].values,
-        )
+        # correlation, p = ss.spearmanr(
+        #     merged[a_field_new].values,
+        #     merged[b_field_new].values,
+        # )
+        correlation = np.corrcoef(merged[a_field_new].values, merged[b_field_new].values)
         res_corr.append(
             {
                 "Dataset A": da,
@@ -60,7 +61,7 @@ for da, db in itertools.combinations_with_replacement(datasets, r=2):
                 "Dataset B": db,
                 "Field B": b_field,
                 "Correlation": correlation,
-                "p": p,
+                #"p": -1,
             }
         )
 res_corr = pd.DataFrame(res_corr)
@@ -460,7 +461,7 @@ def make_pairwise_plot(dataset_a, dataset_b, plot_type):
 
     if plot_type == "heatmap":
         res_corr_filtered = res_corr_filtered[
-            ["Field A", "Field B", "Correlation", "p"]
+            ["Field A", "Field B", "Correlation"]
         ].pivot(index="Field A", columns="Field B", values="Correlation")
         fig = px.imshow(res_corr_filtered, range_color=[-1, 1])
     elif plot_type == "barplot":
@@ -470,7 +471,7 @@ def make_pairwise_plot(dataset_a, dataset_b, plot_type):
             y="Correlation",
             color="Field B",
             barmode="group",
-            hover_data=["p"],
+            # hover_data=["p"],
             template="ggplot2",
             width=1200,
             height=600,
