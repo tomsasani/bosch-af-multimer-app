@@ -4,12 +4,11 @@
 import dash
 from dash import html, ctx, dcc
 import plotly.express as px
+import plotly.graph_objects as go
 import itertools
 import pandas as pd
 import numpy as np
 from dash.dependencies import Input, Output
-# import scipy.stats as ss
-# import dash_bootstrap_components as dbc
 from flask import Flask
 
 
@@ -20,6 +19,10 @@ dataset_keys = pd.read_excel(
     "/home/tomsasani/bosch-af-multimer-app/InsR.xlsx",
     sheet_name="Key",
 )
+# dataset_keys = pd.read_excel(
+#     "InsR.xlsx",
+#     sheet_name="Key",
+# )
 
 datasets = [k.rstrip("\t") for k in dataset_keys["Type of dataset"].unique()]
 data_to_fields = (
@@ -35,6 +38,12 @@ data = pd.read_excel(
     index_col=[0, 1],
     header=[0, 1],
 )
+# data = pd.read_excel(
+#     "InsR.xlsx",
+#     sheet_name="InsR",
+#     index_col=[0, 1],
+#     header=[0, 1],
+# )
 
 
 res_corr = []
@@ -49,16 +58,15 @@ for da, db in itertools.combinations_with_replacement(datasets, r=2):
         avals = da_data[a_field].rename(a_field_new)
         bvals = db_data[b_field].rename(b_field_new)
         merged = pd.concat([avals, bvals], axis=1).dropna()
-        
-        correlation = np.corrcoef(merged[a_field_new].values, merged[b_field_new].values)
+
+        correlation = np.corrcoef(merged[a_field_new].values.reshape(-1, 1), merged[b_field_new].values.reshape(-1, 1), rowvar=False)
         res_corr.append(
             {
                 "Dataset A": da,
                 "Field A": a_field,
                 "Dataset B": db,
                 "Field B": b_field,
-                "Correlation": correlation,
-                #"p": -1,
+                "Correlation": correlation[0][1],
             }
         )
 res_corr = pd.DataFrame(res_corr)
@@ -172,7 +180,8 @@ app.layout = (
             ),
             dcc.Markdown(
                 """
-                        **NOTE:** the vertical line represents the difference between the empirical `pathogenic` and `benign` means, while the histogram represents 1,000 permuted mean differences."""
+                        **NOTE:** the vertical line represents the difference between the empirical `pathogenic` and `benign` means, while the histogram represents 1,000 permuted mean differences.
+                        Empirical p-values represent the fraction of permuted differences that were larger than the empirical difference between `pathogenic` and `benign` means. 'Odds ratios' represent the ratio between the empirical difference and the average permuted difference. Larger 'odds ratios' indicate that the selected score is better aligned with the AlphaMissense pathogenicity classifications."""
             ),
         ],
     ),
@@ -352,21 +361,44 @@ def make_correlation_plot(a_name, a_score, b_name, b_score, discrete_value):
     a_vals["score_name_A"] = a_score
     b_vals["score_name_B"] = b_score
 
-    merged = a_vals.merge(b_vals, left_index=True, right_index=True)
+    merged = a_vals.merge(b_vals, left_index=True, right_index=True).reset_index().rename(columns={"level_0": "Missense change"})
 
     if discrete_value == "discrete":
         fig = px.box(
-            merged, x="score_A", y="score_B", color="score_A", template="ggplot2"
+            merged,
+            x="score_A",
+            y="score_B",
+            color="score_A",
+            template="ggplot2",
+            hover_data=["Missense change"],
         )
     else:
         fig = px.scatter(
             merged,
             x="score_A",
             y="score_B",
-            # trendline="ols",
             template="ggplot2",
+            hover_data=["Missense change"],
         )
         fig.update_traces(opacity=0.1)
+
+        # get OLS fit
+        #  m, c = np.linalg.lstsq(merged["score_A"].values.reshape(-1, 1), merged["score_B"].values)[0]
+        merged_ols = merged.dropna()
+        x, y = merged_ols["score_A"].values, merged_ols["score_B"].values
+        A = np.vstack([x, np.ones(len(x))]).T
+        m, c = np.linalg.lstsq(A, y)[0]
+
+        # create line of best fit dataframe
+        fig.add_traces(
+            go.Scatter(
+                name=f"OLS fit (slope = {round(m, 3)})",
+                x=x,
+                y=x * m + c,
+                mode="lines",
+                line=dict(color="dodgerblue"),
+            ),
+        )
 
     return fig
 
@@ -401,7 +433,7 @@ def make_permutation_plot(perm_dataset, perm_score):
 
     res = [means]
 
-    n_perms = 100
+    n_perms = 1_000
 
     for i in range(n_perms):
         merged["AlphaMissense pathogenicity"] = np.random.permutation(
@@ -425,9 +457,10 @@ def make_permutation_plot(perm_dataset, perm_score):
     emp = res[res["is_empirical"] == True]["diff"].values[0]
 
     pval = np.sum(np.abs(perm["diff"]) >= np.abs(emp)) / n_perms
+    odds = round(np.abs(emp) / np.mean(np.abs(perm["diff"])), 3)
 
     fig = px.histogram(
-        perm, x="diff", template="ggplot2", title=f"Empirical two-sided p-value: {pval}", labels={
+        perm, x="diff", template="ggplot2", title=f"Empirical two-sided p-value: {pval}\nOdds ratio: {odds}", labels={
                      "diff": "Difference between average pathogenic and benign scores",
                  },
     )
@@ -480,4 +513,4 @@ def make_pairwise_plot(dataset_a, dataset_b, plot_type):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
