@@ -459,7 +459,11 @@ def make_pairwise_plot(dataset_a, dataset_b, plot_type):
     if plot_type == "heatmap":
         res_corr_filtered = res_corr_filtered[
             ["Field A", "Field B", "Correlation"]
-        ].pivot(index="Field A", columns="Field B", values="Correlation")
+        ].pivot(
+            index="Field A",
+            columns="Field B",
+            values="Correlation",
+        )
         fig = px.imshow(res_corr_filtered, range_color=[-1, 1])
     elif plot_type == "barplot":
         fig = px.bar(
@@ -468,10 +472,7 @@ def make_pairwise_plot(dataset_a, dataset_b, plot_type):
             y="Correlation",
             color="Field B",
             barmode="group",
-            # hover_data=["p"],
             template="ggplot2",
-            width=1200,
-            height=600,
             range_y=[-1, 1],
         )
 
