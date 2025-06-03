@@ -2,20 +2,19 @@
 # visit http://127.0.0.1:8050/ in your web browser.
 
 import dash
-from dash import html, ctx
-from dash import dcc
+from dash import html, ctx, dcc
 import plotly.express as px
-import plotly.graph_objects as go
-import dash_daq as daq
 import itertools
 import pandas as pd
 import numpy as np
 from dash.dependencies import Input, Output
 import scipy.stats as ss
-import dash_bootstrap_components as dbc
+# import dash_bootstrap_components as dbc
+from flask import Flask
 
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.JOURNAL])
+server = Flask(__name__)
+app = dash.Dash(__name__)#, external_stylesheets=[dbc.themes.JOURNAL])
 
 dataset_keys = pd.read_excel(
     "InsR missense scores joined file JAB 5-16-25.xlsx",
@@ -387,7 +386,6 @@ def make_permutation_plot(perm_dataset, perm_score):
     b_vals = data[perm_dataset][perm_score].to_frame()
 
     a_vals.rename(columns={"am_class": "AlphaMissense pathogenicity"}, inplace=True)
-    # b_vals.rename(columns={perm_score: "score_B"}, inplace=True)
 
     merged = a_vals.merge(b_vals, left_index=True, right_index=True)
 
@@ -482,7 +480,5 @@ def make_pairwise_plot(dataset_a, dataset_b, plot_type):
     return fig
 
 
-#     return fig
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run_server(debug=True, host="localhost", port="8212")
