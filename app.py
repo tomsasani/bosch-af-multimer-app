@@ -17,7 +17,7 @@ server = Flask(__name__)
 app = dash.Dash(__name__, server=server)#, external_stylesheets=[dbc.themes.JOURNAL])
 
 dataset_keys = pd.read_excel(
-    "/home/tomsasani/bosch-af-multimer-app/InsR.xlsx",
+    "InsR.xlsx",
     sheet_name="Key",
 )
 
@@ -30,7 +30,7 @@ data_to_fields = (
 data_to_fields = {k.rstrip("\t"): v for k, v in data_to_fields.items()}
 
 data = pd.read_excel(
-    "/home/tomsasani/bosch-af-multimer-app/InsR.xlsx",
+    "InsR.xlsx",
     sheet_name="InsR",
     index_col=[0, 1],
     header=[0, 1],
@@ -49,10 +49,7 @@ for da, db in itertools.combinations_with_replacement(datasets, r=2):
         avals = da_data[a_field].rename(a_field_new)
         bvals = db_data[b_field].rename(b_field_new)
         merged = pd.concat([avals, bvals], axis=1).dropna()
-        # correlation, p = ss.spearmanr(
-        #     merged[a_field_new].values,
-        #     merged[b_field_new].values,
-        # )
+        
         correlation = np.corrcoef(merged[a_field_new].values, merged[b_field_new].values)
         res_corr.append(
             {
@@ -366,7 +363,7 @@ def make_correlation_plot(a_name, a_score, b_name, b_score, discrete_value):
             merged,
             x="score_A",
             y="score_B",
-            trendline="ols",
+            # trendline="ols",
             template="ggplot2",
         )
         fig.update_traces(opacity=0.1)
@@ -482,4 +479,4 @@ def make_pairwise_plot(dataset_a, dataset_b, plot_type):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, host="localhost", port="8212")
+    app.run()
