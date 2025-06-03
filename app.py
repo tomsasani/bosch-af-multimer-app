@@ -17,7 +17,7 @@ server = Flask(__name__)
 app = dash.Dash(__name__)#, external_stylesheets=[dbc.themes.JOURNAL])
 
 dataset_keys = pd.read_excel(
-    "InsR missense scores joined file JAB 5-16-25.xlsx",
+    "InsR.xlsx",
     sheet_name="Key",
 )
 
