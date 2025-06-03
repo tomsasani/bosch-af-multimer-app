@@ -14,7 +14,7 @@ from flask import Flask
 
 
 server = Flask(__name__)
-app = dash.Dash(__name__)#, external_stylesheets=[dbc.themes.JOURNAL])
+app = dash.Dash(__name__, server=server)#, external_stylesheets=[dbc.themes.JOURNAL])
 
 dataset_keys = pd.read_excel(
     "/home/tomsasani/bosch-af-multimer-app/InsR.xlsx",
