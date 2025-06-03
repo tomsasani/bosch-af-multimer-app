@@ -404,7 +404,7 @@ def make_permutation_plot(perm_dataset, perm_score):
 
     res = [means]
 
-    n_perms = 1_000
+    n_perms = 100
 
     for i in range(n_perms):
         merged["AlphaMissense pathogenicity"] = np.random.permutation(
