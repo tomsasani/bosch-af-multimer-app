@@ -30,7 +30,7 @@ data_to_fields = (
 data_to_fields = {k.rstrip("\t"): v for k, v in data_to_fields.items()}
 
 data = pd.read_excel(
-    "/home/tomsasani/bosch-af-multimer-app/InsR.xlsx",,
+    "/home/tomsasani/bosch-af-multimer-app/InsR.xlsx",
     sheet_name="InsR",
     index_col=[0, 1],
     header=[0, 1],
